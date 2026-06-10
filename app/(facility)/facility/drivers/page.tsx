@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Phone, Star, MoreVertical, Truck, AlertTriangle, Loader2, User, Mail, Car, FileText, X } from 'lucide-react'
+import { Plus, Phone, Star, MoreVertical, Truck, AlertTriangle, Loader2, User, Car } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,10 +35,9 @@ import toast from 'react-hot-toast'
 interface NewDriver {
   name: string
   phone: string
-  email: string
+  password: string
   vehicle_type: string
   vehicle_number: string
-  license_number: string
 }
 
 export default function FacilityDriversPage() {
@@ -48,29 +47,38 @@ export default function FacilityDriversPage() {
   const [newDriver, setNewDriver] = useState<NewDriver>({
     name: '',
     phone: '',
-    email: '',
+    password: '',
     vehicle_type: 'motorcycle',
     vehicle_number: '',
-    license_number: '',
   })
+  const [facilityToken, setFacilityToken] = useState<string | null>(null)
 
-  // Get facility from localStorage
+  // Get facility and token from localStorage
   const [facility, setFacility] = useState<{ id: string; tenant_id: string; name: string } | null>(null)
   
   useEffect(() => {
     const storedFacility = localStorage.getItem('facility')
+    const storedToken = localStorage.getItem('facility_token')
     if (storedFacility) {
       setFacility(JSON.parse(storedFacility))
+    }
+    if (storedToken) {
+      setFacilityToken(storedToken)
     }
   }, [])
 
   const handleCreateDriver = async () => {
-    if (!newDriver.name || !newDriver.phone) {
-      toast.error('Name and phone are required')
+    if (!newDriver.name || !newDriver.phone || !newDriver.password) {
+      toast.error('Name, phone, and password are required')
       return
     }
 
-    if (!facility) {
+    if (newDriver.password.length < 8) {
+      toast.error('Password must be at least 8 characters')
+      return
+    }
+
+    if (!facilityToken) {
       toast.error('Please login first')
       return
     }
@@ -82,8 +90,7 @@ export default function FacilityDriversPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-facility-id': facility.id,
-          'x-tenant-id': facility.tenant_id,
+          'Authorization': `Bearer ${facilityToken}`,
         },
         body: JSON.stringify(newDriver),
       })
@@ -113,10 +120,9 @@ export default function FacilityDriversPage() {
       setNewDriver({
         name: '',
         phone: '',
-        email: '',
+        password: '',
         vehicle_type: 'motorcycle',
         vehicle_number: '',
-        license_number: '',
       })
       setIsCreateModalOpen(false)
     } catch (error) {
@@ -289,17 +295,17 @@ export default function FacilityDriversPage() {
             </div>
 
             <div>
-              <Label>Email (Optional)</Label>
+              <Label>Password *</Label>
               <div className="relative mt-1.5">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  type="email"
-                  value={newDriver.email}
-                  onChange={(e) => setNewDriver({ ...newDriver, email: e.target.value })}
-                  placeholder="driver@email.com"
-                  className="pl-10"
+                  type="password"
+                  value={newDriver.password}
+                  onChange={(e) => setNewDriver({ ...newDriver, password: e.target.value })}
+                  placeholder="Minimum 8 characters"
+                  className="pl-3"
                 />
               </div>
+              <p className="text-xs text-muted-foreground mt-1">Share this password with the driver securely</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -335,18 +341,7 @@ export default function FacilityDriversPage() {
               </div>
             </div>
 
-            <div>
-              <Label>License Number</Label>
-              <div className="relative mt-1.5">
-                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={newDriver.license_number}
-                  onChange={(e) => setNewDriver({ ...newDriver, license_number: e.target.value })}
-                  placeholder="DL12345678"
-                  className="pl-10"
-                />
-              </div>
-            </div>
+
           </div>
 
           <DialogFooter>
