@@ -53,9 +53,10 @@ export async function POST(request: NextRequest) {
       { expiresIn: '7d' }
     )
 
-    // Set HTTP-only cookie
+    // Return token in response body for mobile app + set cookie as backup
     const response = NextResponse.json({
       success: true,
+      token,
       user: {
         id: admin.id,
         username: admin.username,
@@ -65,8 +66,8 @@ export async function POST(request: NextRequest) {
     })
 
     response.cookies.set('admin_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      httpOnly: false,
+      secure: false,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7 // 7 days
     })
